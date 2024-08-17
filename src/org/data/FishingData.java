@@ -2,8 +2,6 @@ package org.data;
 
 import java.util.List;
 
-import org.data.handler.TeleporterHandler;
-
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.wrappers.SimpleNpc;
 import simple.robot.api.ClientContext;
@@ -19,17 +17,19 @@ public class FishingData {
     public static class Task {
         private final String teleportSection;
         private final String teleportLocation;
+        private final String action;
         private final String npcName;
-        private final String taskName;
         private final int requiredLevel;
+        private final String requiredTool;
 
-        public Task(String teleportSection, String teleportLocation, String npcName, String taskName,
-                int requiredLevel) {
+        public Task(String teleportSection, String teleportLocation, String action, String npcName,
+                int requiredLevel, String requiredTool) {
             this.teleportSection = teleportSection;
             this.teleportLocation = teleportLocation;
+            this.action = action;
             this.npcName = npcName;
-            this.taskName = taskName;
             this.requiredLevel = requiredLevel;
+            this.requiredTool = requiredTool;
         }
 
         public String getTeleportSection() {
@@ -40,33 +40,38 @@ public class FishingData {
             return teleportLocation;
         }
 
-        public String getNpcName() {
-            return npcName;
+        public String getAction() {
+            return action;
         }
 
-        public String getTaskName() {
-            return taskName;
+        public String getNpcName() {
+            return npcName;
         }
 
         public int getRequiredLevel() {
             return requiredLevel;
         }
 
-        public boolean isTaskTargetPresent() {
-            return ctx.objects.populate().filter(taskName).isEmpty();
+        public String getRequiredTool() {
+            return requiredTool;
         }
 
-        public SimpleNpc getTaskNPC() {
-            return ctx.npcs.populate().filter(npcName).nextNearest();
+        public boolean isActionPresent() {
+            return ctx.objects.populate().filter(npcName).isEmpty();
         }
 
-        public void teleportTarget() {
-            if (taskName == null || "Unknown".equals(getTeleportSection())) {
-                System.out.println("Unknown task. Cannot teleport.");
+        public SimpleNpc getActionNPC() {
+            return ctx.npcs.populate().filter(action).nextNearest();
+        }
+
+        public void teleportToAction() {
+            if (npcName == null || "Unknown".equals(getTeleportSection())) {
+                System.out.println("Unknown NPC. Cannot teleport.");
             } else {
-                TeleporterHandler.teleport("Modern", "Lumbridge Home Teleport");
+                ctx.magic.castHomeTeleport();
                 ctx.sleep(1000, 3000);
-                TeleporterHandler.teleport(getTeleportSection(), getTeleportLocation());
+                ctx.teleporter.open();
+                ctx.teleporter.teleportStringPath(getTeleportSection(), getTeleportLocation());
             }
         }
     }
@@ -76,39 +81,39 @@ public class FishingData {
             "cod", "casket", "swordfish", "anchovies");
 
     private static final List<Task> PREMADE_TASKS = List.of(
-            new Task("Skilling", "Woodcutting", "Small Net", "Fishing spot", 1),
-            new Task("Skilling", "Woodcutting", "Lure", "Rod Fishing spot", 20),
-            new Task("Skilling", "Woodcutting", "Cage", "Fishing spot", 40),
-            new Task("Skilling", "Woodcutting", "Harpoon", "Fishing spot", 76),
-            new Task("Skilling", "Woodcutting", "Fish", "Olympian fishing spot", 80));
+            new Task("Skilling", "Woodcutting", "Small Net", "Fishing spot", 1, "Small fishing net"),
+            new Task("Skilling", "Woodcutting", "Lure", "Rod Fishing spot", 20, "Fly fishing rod"),
+            new Task("Skilling", "Woodcutting", "Cage", "Fishing spot", 40, "Lobster pot"),
+            new Task("Skilling", "Woodcutting", "Harpoon", "Fishing spot", 76, "Harpoon"),
+            new Task("Skilling", "Woodcutting", "Fish", "Olympian fishing spot", 80, "Harpoon"));
 
-    public String getTaskName() {
-        return currentTask != null ? currentTask.getTaskName() : "No task set";
-    }
-
-    public Task fromTaskName(String taskName) {
-        return PREMADE_TASKS.stream()
-                .filter(task -> task.getTaskName().equals(taskName))
-                .findFirst()
-                .orElse(new Task("Unknown", "Unknown", "Unknown", "Unknown", 0));
+    public String getNpcName() {
+        return currentTask != null ? currentTask.getNpcName() : "No NPC set";
     }
 
     public Task fromNpcName(String npcName) {
         return PREMADE_TASKS.stream()
-                .filter(task -> task.getNpcName().equalsIgnoreCase(npcName))
+                .filter(task -> task.getNpcName().equals(npcName))
                 .findFirst()
-                .orElse(new Task("Unknown", "Unknown", "Unknown", "Unknown", 0));
+                .orElse(new Task("Unknown", "Unknown", "Unknown", "Unknown", 0, "Unknown"));
+    }
+
+    public Task fromAction(String action) {
+        return PREMADE_TASKS.stream()
+                .filter(task -> task.getAction().equalsIgnoreCase(action))
+                .findFirst()
+                .orElse(new Task("Unknown", "Unknown", "Unknown", "Unknown", 0, "Unknown"));
     }
 
     public Task getBestTaskForLevel(int level) {
         return PREMADE_TASKS.stream()
                 .filter(task -> task.getRequiredLevel() <= level)
                 .max((task1, task2) -> Integer.compare(task1.getRequiredLevel(), task2.getRequiredLevel()))
-                .orElse(new Task("Unknown", "Unknown", "Unknown", "Unknown", 0));
+                .orElse(new Task("Unknown", "Unknown", "Unknown", "Unknown", 0, "Unknown"));
     }
 
-    public void setTaskByName(String taskName) {
-        this.currentTask = fromTaskName(taskName);
+    public void setTaskByNpcName(String npcName) {
+        this.currentTask = fromNpcName(npcName);
     }
 
     public void setTask(Task task) {

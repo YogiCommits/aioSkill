@@ -24,4 +24,10 @@ public abstract class Task {
 
     public abstract String DebugTaskDescription();
 
+    public void reset() {
+        p = c.players.getLocal();
+        loc = p.getLocation();
+        anim = p.getAnimation();
+        graph = p.getGraphic();
+    }
 }

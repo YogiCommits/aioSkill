@@ -2,7 +2,6 @@ package org.scripts.august.scripts.tasks;
 
 import org.data.LocationsData;
 import org.data.handler.RandomEventsHandler;
-import org.data.handler.TeleporterHandler;
 import org.scripter.Task;
 import org.scripts.august.scripts.aioSkill;
 
@@ -18,10 +17,18 @@ public class Transport extends Task {
             return;
         }
 
-        boolean hasEssence = hasEssence();
         boolean isAtHome = p.within(LocationsData.HOME.getWorldArea());
+        boolean hasEssence = false;
+
         String currentSkill = aioSkill.skill;
-        altar = c.objects.populate().filter(29631).next();
+        if ("Runecrafting".equals(currentSkill)) {
+            hasEssence = !c.inventory.populate().filterContains("essence").isEmpty();
+            if (!isAtHome && !hasEssence) {
+                c.magic.castHomeTeleport();
+                aioSkill.getScriptController().setTask("RunecraftBank");
+                return;
+            }
+        }
 
         if (isAtHome) {
             handleAtHomeTransport(currentSkill);
@@ -30,47 +37,59 @@ public class Transport extends Task {
         }
     }
 
-    private boolean hasEssence() {
-        return !c.inventory.populate().filterContains("essence").isEmpty();
-    }
-
     private void handleAtHomeTransport(String currentSkill) {
+        String teleportSection = null;
+        String teleportLocation = null;
+        String taskName = null;
+
         switch (currentSkill) {
             case "Crafting":
-                teleportAndSetTask("Modern", "Lumbridge Home Teleport", "Craft");
+                teleportSection = "Modern";
+                teleportLocation = "Lumbridge Home Teleport";
+                taskName = "Craft";
                 break;
 
             case "Slayer":
                 handleSlayerAtHome();
-                break;
+                return;
 
             case "Runecrafting":
-                teleportAndSetTask("Skilling", "Runecrafting", "Runecraft");
+                teleportSection = "Skilling";
+                teleportLocation = "Runecrafting";
+                taskName = "Runecraft";
                 break;
 
             case "Woodcutting":
-                teleportAndSetTask(aioSkill.woodcuttingData.getTeleportSection(),
-                        aioSkill.woodcuttingData.getTeleportLocation(), "Woodcut");
+                teleportSection = aioSkill.woodcuttingData.getTeleportSection();
+                teleportLocation = aioSkill.woodcuttingData.getTeleportLocation();
+                taskName = "Woodcut";
                 break;
 
             case "Thieving":
-                teleportAndSetTask(aioSkill.thieveData.getTeleportSection(),
-                        aioSkill.thieveData.getTeleportLocation(), "Thieve");
+                teleportSection = aioSkill.thieveData.getTeleportSection();
+                teleportLocation = aioSkill.thieveData.getTeleportLocation();
+                taskName = "Thieve";
                 break;
 
             case "Mining":
-                teleportAndSetTask(aioSkill.miningData.getTeleportSection(),
-                        aioSkill.miningData.getTeleportLocation(), "MineWalk");
+                teleportSection = aioSkill.miningData.getTeleportSection();
+                teleportLocation = aioSkill.miningData.getTeleportLocation();
+                taskName = "MineWalk";
                 break;
 
             case "Fishing":
-                teleportAndSetTask(aioSkill.fishingData.getTeleportSection(),
-                        aioSkill.fishingData.getTeleportLocation(), "Fish");
+                teleportSection = aioSkill.fishingData.getTeleportSection();
+                teleportLocation = aioSkill.fishingData.getTeleportLocation();
+                taskName = "Fish";
                 break;
 
             default:
-                break;
+                return;
         }
+        c.teleporter.open();
+        c.teleporter.teleportStringPath(teleportSection, teleportLocation);
+        aioSkill.getScriptController().setTask(taskName);
+
     }
 
     private void handleSlayerAtHome() {
@@ -87,23 +106,25 @@ public class Transport extends Task {
     private void handleAwayFromHomeTransport(String currentSkill, boolean hasEssence) {
         switch (currentSkill) {
             case "Runecrafting":
+                altar = c.objects.populate().filter(29631).next();
                 if (hasEssence && altar != null) {
                     aioSkill.getScriptController().setTask("Runecraft");
-                } else if (!hasEssence) {
-                    teleportAndSetTask("Modern", "Lumbridge Home Teleport", "RunecraftBank");
                 }
                 break;
 
             case "Slayer":
                 if (shouldTeleportToSlayerBank()) {
-                    teleportAndSetTask("Modern", "Lumbridge Home Teleport", "SlayerBank");
+                    c.magic.castHomeTeleport();
+                    aioSkill.getScriptController().setTask("SlayerBank");
                 }
                 break;
+
             case "Mining":
                 if (!c.inventory.inventoryFull()) {
                     aioSkill.getScriptController().setTask("MineWalk");
                 } else {
-                    teleportAndSetTask("Modern", "Lumbridge Home Teleport", "Bank");
+                    c.magic.castHomeTeleport();
+                    aioSkill.getScriptController().setTask("MineBank");
                 }
                 break;
 
@@ -118,16 +139,12 @@ public class Transport extends Task {
     }
 
     private boolean shouldUsePrayer() {
-        return c.inventory.populate().filterContains("pray").isEmpty() && "Prayer".equals(aioSkill.health);
+        return c.inventory.populate().filterContains("pray").isEmpty() && "Prayer".equals(aioSkill.secondOption);
     }
 
     private boolean shouldUseFood() {
-        return c.inventory.populate().filterContains(aioSkill.foodString).isEmpty() && "Food".equals(aioSkill.health);
-    }
-
-    private void teleportAndSetTask(String section, String location, String taskName) {
-        TeleporterHandler.teleport(section, location);
-        aioSkill.getScriptController().setTask(taskName);
+        return c.inventory.populate().filterContains(aioSkill.foodString).isEmpty()
+                && "Food".equals(aioSkill.secondOption);
     }
 
     @Override

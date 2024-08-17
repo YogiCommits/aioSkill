@@ -4,12 +4,22 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "type": "java",
-      "name": "App",
+      "name": "App -- Static",
       "request": "launch",
-      "args": "-developer-mode noverify",
+      "args": "--developer-mode - noverify",
       "mainClass": "simple.Loader",
+      "vmArgs": "-ea"
+    },
+    {
+      "type": "java",
+      "name": "App -- Rotating Proxy",
+      "request": "launch",
+      "args": "--developer-mode  noverify ",
+      "mainClass": "simple.Loader",
+      "vmArgs": "-ea"
     }
   ]
 }

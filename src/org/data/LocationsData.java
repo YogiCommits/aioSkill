@@ -4,6 +4,8 @@ import simple.robot.utils.WorldArea;
 
 public enum LocationsData {
     HOME("home", new WorldArea(2226, 3319, 25, 28, 0)),
+    MINING_DONATOR_ZONE("home", new WorldArea(2263, 3318, 3, 7, 0)),
+    WOODCUTTING_DONATOR_ZONE("home", new WorldArea(2203, 3368, 23, 8, 0)),
     HOME_MINING("home mining area", new WorldArea(2267, 3315, 11, 17, 0)),
     HOME_MINING2("home mining area", new WorldArea(2277, 3320, 13, 15,
             0)),
@@ -15,7 +17,8 @@ public enum LocationsData {
     SLAYER_EMERALD("", new WorldArea(3178, 12398, 15, 16, 0)),
     SLAYER_KRAKEN("", new WorldArea(2263, 10001, 15, 16, 0)),
     SLAYER_GREEN_DRAGON("", new WorldArea(2584, 9425, 15, 15, 0)),
-    SLAYER_BLACK_DRAGON("", new WorldArea(2821, 9825, 6, 3, 0));
+    SLAYER_BLACK_DRAGON("", new WorldArea(2821, 9825, 6, 3, 0)),
+    ESSENCE_BANK("", new WorldArea(2821, 9825, 6, 3, 0));
 
     private final String locationName;
     private final WorldArea worldArea;

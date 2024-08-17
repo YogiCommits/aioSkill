@@ -330,7 +330,7 @@ public enum ShopItem {
     SACK_PACK(381),
     BASKET_PACK(382),
 
-    /*FISHING*/
+    /* FISHING */
     SMALL_FISHING_NET(383),
     BIG_FISHING_NET(384),
     FISHING_ROD(385),
@@ -450,11 +450,9 @@ public enum ShopItem {
     ADAMANT_AXE(485),
     RUNE_AXE(486);
 
-
-
     final int param0;
     final int param1 = 36175884;
-    String target = "";
+    String firstOption = "";
 
     ShopItem(int param0) {
         this.param0 = param0;
@@ -465,7 +463,7 @@ public enum ShopItem {
         int id = 2;
         String option = "Buy 1";
 
-        ClientContext.instance().menuActions.sendAction(57, param0, 36175884, 2, "Buy 1", target);
+        ClientContext.instance().menuActions.sendAction(57, param0, 36175884, 2, "Buy 1", firstOption);
     }
 
     public void buy5() {
@@ -473,7 +471,7 @@ public enum ShopItem {
         int id = 3;
         String option = "Buy 5";
 
-        ClientContext.instance().menuActions.sendAction(action, param0, param1, id, option, target);
+        ClientContext.instance().menuActions.sendAction(action, param0, param1, id, option, firstOption);
     }
 
     public void buy28() {
@@ -481,11 +479,11 @@ public enum ShopItem {
         int id = 6;
         String option = "Buy 28";
 
-        ClientContext.instance().menuActions.sendAction(action, param0, param1, id, option, target);
+        ClientContext.instance().menuActions.sendAction(action, param0, param1, id, option, firstOption);
     }
 
     public void buyX(int quantity) {
-        //TODO:
-        //  add functionality
+        // TODO:
+        // add functionality
     }
 }

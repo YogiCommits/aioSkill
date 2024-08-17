@@ -2,9 +2,7 @@ package org.scripts.august.scripts;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import net.runelite.client.util.Text;
 import javax.swing.SwingUtilities;
 
 import org.data.CraftingData;
@@ -20,14 +18,18 @@ import org.scripts.august.scripts.tasks.Bank;
 import org.scripts.august.scripts.tasks.Combat;
 import org.scripts.august.scripts.tasks.Craft;
 import org.scripts.august.scripts.tasks.Fish;
+import org.scripts.august.scripts.tasks.FishBank;
 import org.scripts.august.scripts.tasks.GetSlayerTask;
 import org.scripts.august.scripts.tasks.Mine;
+import org.scripts.august.scripts.tasks.MineBank;
 import org.scripts.august.scripts.tasks.MineWalk;
 import org.scripts.august.scripts.tasks.Runecraft;
 import org.scripts.august.scripts.tasks.RunecraftBank;
+import org.scripts.august.scripts.tasks.RunecraftTransport;
 import org.scripts.august.scripts.tasks.SlayerBank;
 import org.scripts.august.scripts.tasks.SlayerTree;
 import org.scripts.august.scripts.tasks.SlayerWalk;
+import org.scripts.august.scripts.tasks.SmithnSmelt;
 import org.scripts.august.scripts.tasks.Thieve;
 import org.scripts.august.scripts.tasks.Transport;
 import org.scripts.august.scripts.tasks.EssenceMine;
@@ -36,24 +38,24 @@ import org.scripts.august.scripts.tasks.Magic;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import net.runelite.api.ChatMessageType;
 import net.runelite.client.eventbus.Subscribe;
 import net.unethicalite.api.packets.UpdateSlayerInfoServerPacket;
 import simple.hooks.filters.SimpleSkills.Skills;
 import simple.hooks.scripts.Category;
+import simple.hooks.scripts.LoopingScript;
 import simple.hooks.scripts.ScriptManifest;
 import simple.hooks.simplebot.ChatMessage;
-import simple.hooks.simplebot.Viewport;
 import simple.hooks.wrappers.SimpleItem;
 import simple.robot.script.Script;
 
 @ScriptManifest(servers = {
-        "August" }, discord = "", version = "4.0", name = "aioSkill", author = "fff7777", category = Category.UTILITY, description = "Skills")
-public class aioSkill extends Script implements MouseListener {
+        "August" }, discord = "", version = "6.0", name = "aioSkill", author = "fff7777", category = Category.MONEYMAKING, description = "Please read the forum post for detials")
+public class aioSkill extends Script implements MouseListener, LoopingScript {
     static ScriptController scriptController;
     private aioSkillPaint paintHelper;
     public static Object sellNpc;
     public static String skill;
-    public String target;
     public boolean started;
     public static String status;
     private long startTime;
@@ -71,34 +73,49 @@ public class aioSkill extends Script implements MouseListener {
     public static String foodString;
     public static SimpleItem primaryWeapon;
     public static boolean best;
-    public static String health;
     public static SlayerData slayerTask = new SlayerData("", 0);
     public static String slayerMaster;
     public static boolean usePrayer;
     long elapsedTime = System.currentTimeMillis() - getStartTime();
+    int superiorSpawned;
+    public boolean slayWorldBoss;
+    public boolean randomizeSkill;
+    public boolean prestige;
+    public static String firstOption;
+    public static String secondOption;
     public static boolean superiorUp;
     public static String alchItem;
+    public static int tGobblinCount;
 
     @Override
     public void onChatMessage(ChatMessage chatMessage) {
         final String message = chatMessage.getMessage();
 
-        // First pattern for slayer tasks
-        String slayerPattern = "(?i)you have completed \\d+ slayer";
-        Matcher slayerMatcher = Pattern.compile(slayerPattern).matcher(message);
-
-        if (slayerMatcher.find()) {
+        if (message.matches("(?i)(?s).*\\byou have completed \\d+ slayer\\b.*")) {
             slayerTask = new SlayerData("", 0);
             slayerTasksCompleted++;
+            return;
         }
 
-        // Second pattern for superior foe
-        String superiorPattern = "A superior foe has ";
-        Matcher superiorMatcher = Pattern.compile(Pattern.quote(superiorPattern)).matcher(message);
-
-        if (superiorMatcher.find()) {
+        String cleanMessage = Text.removeTags(message);
+        if (cleanMessage.matches("(?i)(?s).*\\bA superior foe has appeared\\.\\.\\.\\b.*")
+                || message.matches("(?i)(?s).*\\bA superior foe has appeared\\.\\.\\.\\b.*")
+                || message.contains("superior foe has appeared")) {
             superiorUp = true;
+            superiorSpawned++;
+            return;
         }
+
+        if (chatMessage.getType() == ChatMessageType.GAMEMESSAGE || chatMessage.getType() == ChatMessageType.SPAM) {
+            String chatMsg = Text.removeTags(chatMessage.getMessage());
+            if (chatMsg.equals("A superior foe has appeared...")) {
+                superiorUp = true;
+                superiorSpawned++;
+                return;
+            }
+
+        }
+
     }
 
     @Subscribe
@@ -117,6 +134,7 @@ public class aioSkill extends Script implements MouseListener {
         scriptController.addTask("Thieve", new Thieve());
         scriptController.addTask("Woodcut", new Woodcut());
         scriptController.addTask("Mine", new Mine());
+        scriptController.addTask("MineBank", new MineBank());
         scriptController.addTask("Transport", new Transport());
         scriptController.addTask("Fish", new Fish());
         scriptController.addTask("GetSlayerTask", new GetSlayerTask());
@@ -130,6 +148,9 @@ public class aioSkill extends Script implements MouseListener {
         scriptController.addTask("Craft", new Craft());
         scriptController.addTask("EssenceMine", new EssenceMine());
         scriptController.addTask("Magic", new Magic());
+        scriptController.addTask("SmithnSmelt", new SmithnSmelt());
+        scriptController.addTask("FishBank", new FishBank());
+        scriptController.addTask("RunecraftTransport", new RunecraftTransport());
         scriptController.setTask("Bank");
         setupGUI();
         setupPaint();
@@ -153,72 +174,66 @@ public class aioSkill extends Script implements MouseListener {
 
     @Override
     public void onProcess() {
-        if (ctx.viewport.zoomValue() != 0 || ctx.viewport.pitch(382)) {
-            ctx.viewport.zoom(Viewport.CameraZoom.ZOOM_0);
-            ctx.viewport.pitch(382);
-            ctx.menuActions.sendAction(57, 1, 35913751, 1, "Look North", "");
-        }
         if (!started) {
-            System.out.println(skill);
             return;
         }
-        if (elapsedTime >= 3600000 && !ctx.user.forumsName().equals("ffff777")) {
+        if (System.currentTimeMillis() - getStartTime() >= 7200000 && !ctx.user.forumsName().equals("ffff777")) {
             ctx.stopScript();
         }
         if (skill == "Thieving") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 thieveData = new ThievingData().getBestTaskForLevel(ctx.skills.realLevel(Skills.THIEVING));
                 best = true;
             } else {
-                thieveData = new ThievingData().fromTaskName(target);
+                thieveData = new ThievingData().fromTaskName(firstOption);
             }
         }
         if (skill == "Woodcutting") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 woodcuttingData = new WoodcuttingData().getBestTaskForLevel(ctx.skills.realLevel(Skills.WOODCUTTING));
                 best = true;
             } else {
-                woodcuttingData = new WoodcuttingData().fromTaskName(target);
+                woodcuttingData = new WoodcuttingData().fromTaskName(firstOption);
             }
         }
         if (skill == "Mining") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 miningData = new MiningData().getBestTaskForLevel(ctx.skills.realLevel(Skills.MINING));
                 best = true;
             } else {
-                miningData = new MiningData().fromTaskName(target);
+                miningData = new MiningData().fromTaskName(firstOption);
             }
         }
         if (skill == "Fishing") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 fishingData = new FishingData().getBestTaskForLevel(ctx.skills.realLevel(Skills.FISHING));
                 best = true;
             } else {
-                fishingData = new FishingData().fromNpcName(target);
+                fishingData = new FishingData().fromAction(firstOption);
             }
         }
         if (skill == "Slayer") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 slayerMaster = SlayerData.getBestTaskForLevel(ctx.skills.realLevel(Skills.SLAYER));
                 best = true;
             } else {
-                slayerMaster = target;
+                slayerMaster = firstOption;
             }
         }
         if (skill == "Cooking") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 best = true;
                 miningData = new MiningData().getBestTaskForLevel(ctx.skills.realLevel(Skills.MINING));
             } else {
-                miningData = new MiningData().fromTaskName(target);
+                miningData = new MiningData().fromTaskName(firstOption);
             }
         }
         if (skill == "Crafting") {
-            if (target == "Best") {
+            if (firstOption == "Best") {
                 best = true;
                 craftingData = new CraftingData().getBestTaskForLevel(ctx.skills.realLevel(Skills.MINING));
             } else {
-                craftingData = new CraftingData().fromTaskName(target);
+                craftingData = new CraftingData().fromTaskName(firstOption);
             }
         }
         scriptController.run();
@@ -231,8 +246,8 @@ public class aioSkill extends Script implements MouseListener {
             gui = null;
         }
         skill = null;
-        target = null;
-        health = null;
+        firstOption = null;
+        firstOption = null;
         boost = null;
         scriptController = null;
         sellNpc = null;
@@ -265,6 +280,8 @@ public class aioSkill extends Script implements MouseListener {
         ctx.paint.drawWorldArea(g, LocationsData.BARROWS_MINING.getWorldArea());
         ctx.paint.drawWorldArea(g, LocationsData.BARROWS_MINING2.getWorldArea());
         ctx.paint.drawWorldArea(g, LocationsData.SLAYER_EMERALD.getWorldArea());
+        ctx.paint.drawWorldArea(g, LocationsData.MINING_DONATOR_ZONE.getWorldArea());
+        ctx.paint.drawWorldArea(g, LocationsData.WOODCUTTING_DONATOR_ZONE.getWorldArea());
         ctx.paint.drawWorldArea(g, LocationsData.SLAYER_GREEN_DRAGON.getWorldArea());
         ctx.paint.drawWorldArea(g, LocationsData.THIEVE.getWorldArea());
         ctx.paint.drawWorldArea(g, LocationsData.SLAYER_KRAKEN.getWorldArea());
@@ -304,8 +321,8 @@ public class aioSkill extends Script implements MouseListener {
         this.status = status;
     }
 
-    public String getTarget() {
-        return this.target;
+    public String getfirstOption() {
+        return this.firstOption;
     }
 
     @Override
@@ -333,6 +350,127 @@ public class aioSkill extends Script implements MouseListener {
     @Override
     public void mouseExited(MouseEvent e) {
 
+    }
+
+    public aioSkillPaint getPaintHelper() {
+        return paintHelper;
+    }
+
+    public static Object getSellNpc() {
+        return sellNpc;
+    }
+
+    public String getSkill() {
+        return skill == null ? "" : skill;
+    }
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public SkillUI getGui() {
+        return gui;
+    }
+
+    public static MiningData.Task getMiningData() {
+        return miningData;
+    }
+
+    public static WoodcuttingData.Task getWoodcuttingData() {
+        return woodcuttingData;
+    }
+
+    public static FishingData.Task getFishingData() {
+        return fishingData;
+    }
+
+    public static ThievingData.Task getThieveData() {
+        return thieveData;
+    }
+
+    public int getSlayerTasksCompleted() {
+        return slayerTasksCompleted;
+    }
+
+    public String getSlayerTaskNpc() {
+        return slayerTaskNpc;
+    }
+
+    public static Task getCraftingData() {
+        return craftingData;
+    }
+
+    public static String getBoost() {
+        return boost;
+    }
+
+    public static String getPrimaryWeaponString() {
+        return primaryWeaponString;
+    }
+
+    public static String getSecondaryWeaponString() {
+        return secondaryWeaponString;
+    }
+
+    public static String getFoodString() {
+        return foodString;
+    }
+
+    public static SimpleItem getPrimaryWeapon() {
+        return primaryWeapon;
+    }
+
+    public static boolean isBest() {
+        return best;
+    }
+
+    public static SlayerData getSlayerTask() {
+        return slayerTask;
+    }
+
+    public static String getSlayerMaster() {
+        return slayerMaster;
+    }
+
+    public static boolean isUsePrayer() {
+        return usePrayer;
+    }
+
+    public long getElapsedTime() {
+        return elapsedTime;
+    }
+
+    public int getSuperiorSpawned() {
+        return superiorSpawned;
+    }
+
+    public static String getFirstOption() {
+        return firstOption == null ? "" : firstOption;
+    }
+
+    public static String getSecondOption() {
+        return secondOption == null ? "" : secondOption;
+    }
+
+    public static boolean isSuperiorUp() {
+        return superiorUp;
+    }
+
+    public static String getAlchItem() {
+        return alchItem;
+    }
+
+    public int getTGobblinCount() {
+        return tGobblinCount;
+    }
+
+    @Override
+    public int loopDuration() {
+        return 300;
     }
 
 }

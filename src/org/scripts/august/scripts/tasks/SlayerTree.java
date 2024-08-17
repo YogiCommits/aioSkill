@@ -7,6 +7,9 @@ import org.scripts.august.scripts.aioSkill;
 public class SlayerTree extends Task {
     @Override
     public void run() {
+        if (c.prayers.quickPrayers()) {
+            c.prayers.quickPrayers(false);
+        }
         if (RandomEventsHandler.needsAction()) {
             return;
         }
@@ -16,8 +19,8 @@ public class SlayerTree extends Task {
             return;
         }
 
-        if ((aioSkill.health.equals("Prayer") && !c.inventory.populate().filterContains("prayer").isEmpty()) ||
-                (aioSkill.health.equals("Food")
+        if ((aioSkill.secondOption.equals("Prayer") && !c.inventory.populate().filterContains("prayer").isEmpty()) ||
+                (aioSkill.secondOption.equals("Food")
                         && !c.inventory.populate().filterContains(aioSkill.foodString).isEmpty())) {
             aioSkill.getScriptController().setTask("Transport");
             return;

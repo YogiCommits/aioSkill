@@ -11,6 +11,10 @@ import simple.hooks.wrappers.SimpleObject;
 
 public class Thieve extends Task {
 
+    private int lastExpGained = 0;
+    private long lastExpCheckTime = 0;
+    private final int CHECK_INTERVAL = 5000; // 5 seconds in milliseconds
+
     @Override
     public void run() {
         if (aioSkill.best) {
@@ -23,27 +27,30 @@ public class Thieve extends Task {
             aioSkill.getScriptController().setTask("Transport");
             return;
         }
-        RandomEventsHandler.needsAction();
         if (c.inventory.inventoryFull()) {
             aioSkill.getScriptController().setTask("Bank");
             return;
         }
-
-        if (c.players.getLocal().isAnimating()) {
-            return;
-        }
-
         SimpleObject stall = c.objects.populate().filter(LocationsData.THIEVE.getWorldArea())
                 .filter(aioSkill.thieveData.getTaskName())
                 .nextNearest();
 
-        if (stall != null) {
-            stall.menuAction("Steal-from");
-            c.sleepCondition(c.players.getLocal()::isAnimating);
-            aioSkill.status = "Stealing from " + stall.getName();
-            c.onCondition(() -> !c.players.getLocal().isAnimating(), 600, 10);
+        int currentExp = c.skills.experience(Skills.THIEVING);
+        long currentTime = System.currentTimeMillis();
+
+        if (lastExpGained == 0 || (currentExp == lastExpGained && (currentTime - lastExpCheckTime) >= CHECK_INTERVAL)) {
+            if (stall != null) {
+                aioSkill.status = "Stealing from " + stall.getName();
+                stall.menuAction("Steal-from");
+                c.onCondition(() -> c.players.getLocal().isAnimating(), 600, 10);
+                c.onCondition(() -> !c.players.getLocal().isAnimating(), 600, 10);
+            } else {
+                aioSkill.status = "No valid stall found. Waiting...";
+                c.sleep(600, 1800);
+            }
         } else {
-            c.sleep(600, 1800);
+            lastExpGained = currentExp;
+            lastExpCheckTime = currentTime;
         }
     }
 
@@ -51,5 +58,4 @@ public class Thieve extends Task {
     public String DebugTaskDescription() {
         return "Thieve";
     }
-
 }

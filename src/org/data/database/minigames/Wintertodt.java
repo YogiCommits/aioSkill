@@ -49,6 +49,7 @@ public class Wintertodt {
         REJUV_POTION(20702, 20701, 20700, 20699);
 
         int[] ids;
+
         Potions(int... ids) {
             this.ids = ids;
         }
@@ -87,8 +88,7 @@ public class Wintertodt {
         KNIFE_BOX(29317),
         AXE_BOX(29318),
         TINDERBOX_BOX(29319),
-        POTION_BOX(29320)
-        ;
+        POTION_BOX(29320);
 
         private final int id;
 
@@ -133,7 +133,6 @@ public class Wintertodt {
         }
     }
 
-
     /* anims */
     public enum Anims {
         FM_ANIMATION(832);
@@ -148,8 +147,6 @@ public class Wintertodt {
             return id;
         }
     }
-
-
 
     /* tiles & areas */
     public enum Tiles {
@@ -171,9 +168,8 @@ public class Wintertodt {
         }
     }
 
-
     public enum Areas {
-        FM_TILES(new WorldPoint[]{
+        FM_TILES(new WorldPoint[] {
                 new WorldPoint(1619, 3999, 0),
                 new WorldPoint(1619, 3998, 0),
                 new WorldPoint(1619, 3997, 0),
@@ -183,24 +179,19 @@ public class Wintertodt {
         }),
         BANK_AREA(new WorldArea(
                 new WorldPoint(1641, 3942, 0),
-                new WorldPoint(1638, 3946, 0)
-        )),
+                new WorldPoint(1638, 3946, 0))),
         OUTSIDE_AREA(new WorldArea(
                 new WorldPoint(1638, 3963, 0),
-                new WorldPoint(1624, 3937, 0)
-        )),
+                new WorldPoint(1624, 3937, 0))),
         LOBBY(new WorldArea(
                 new WorldPoint(1636, 3989, 0),
-                new WorldPoint(1624, 3967, 0)
-        )),
+                new WorldPoint(1624, 3967, 0))),
         PRODUCTION(new WorldArea(
                 new WorldPoint(1623, 4000, 0),
-                new WorldPoint(1608, 3987, 0)
-        )),
+                new WorldPoint(1608, 3987, 0))),
         BRAZIER_CHECK(new WorldArea(
                 new WorldPoint(1619, 3996, 0),
-                new WorldPoint(1623, 4000, 0)
-        ));
+                new WorldPoint(1623, 4000, 0)));
 
         private final WorldPoint[] worldPoints;
         private final WorldArea worldArea;
@@ -224,10 +215,9 @@ public class Wintertodt {
         }
     }
 
-
     /* widgets */
     public enum Widgets {
-        HEALTH_WIDGET(new int[]{396, 21});
+        firstOption_WIDGET(new int[] { 396, 21 });
 
         private final int[] widget;
 
@@ -247,7 +237,6 @@ public class Wintertodt {
             return widget;
         }
     }
-
 
     public WorldArea getSnowfallBounds() {
         return null;

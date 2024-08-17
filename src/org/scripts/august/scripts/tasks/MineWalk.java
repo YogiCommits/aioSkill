@@ -30,7 +30,7 @@ public class MineWalk extends Task {
     private void moveToLocation(WorldArea worldArea) {
         WorldPoint stepTile = worldArea.randomTile();
         c.menuActions.step(stepTile);
-        c.onCondition(() -> !p.getLocation().equals(stepTile), 600, 20);
+        c.onCondition(() -> p.getLocation().equals(stepTile), 600, 20);
     }
 
     @Override

@@ -2,8 +2,6 @@ package org.data;
 
 import java.util.List;
 
-import org.data.handler.TeleporterHandler;
-
 import simple.hooks.wrappers.SimpleNpc;
 import simple.robot.api.ClientContext;
 
@@ -49,7 +47,7 @@ public class ThievingData {
             return requiredLevel;
         }
 
-        public boolean isTaskTargetPresent() {
+        public boolean isTaskfirstOptionPresent() {
             return ctx.objects.populate().filter(taskName).isEmpty();
         }
 
@@ -57,13 +55,14 @@ public class ThievingData {
             return ctx.npcs.populate().filter(npcName).nextNearest();
         }
 
-        public void teleportTarget() {
+        public void teleportfirstOption() {
             if (taskName == null || "Unknown".equals(getTeleportSection())) {
                 System.out.println("Unknown task. Cannot teleport.");
             } else {
-                TeleporterHandler.teleport("Modern", "Lumbridge Home Teleport");
+                ctx.magic.castHomeTeleport();
                 ctx.sleep(1000, 3000);
-                TeleporterHandler.teleport(getTeleportSection(), getTeleportLocation());
+                ctx.teleporter.open();
+                ctx.teleporter.teleportStringPath(getTeleportSection(), getTeleportLocation());
             }
         }
     }

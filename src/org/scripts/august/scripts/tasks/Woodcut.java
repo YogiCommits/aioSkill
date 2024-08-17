@@ -11,6 +11,8 @@ import simple.hooks.wrappers.SimpleObject;
 
 public class Woodcut extends Task {
 
+    private SimpleObject tree;
+
     @Override
     public void run() {
         if (aioSkill.best) {
@@ -20,7 +22,8 @@ public class Woodcut extends Task {
         if (RandomEventsHandler.needsAction()) {
             return;
         }
-        if (!p.within(LocationsData.WOODCUTTING.getWorldArea())) {
+        if (!p.within(LocationsData.WOODCUTTING.getWorldArea())
+                && !aioSkill.secondOption.equalsIgnoreCase("Donator Zone")) {
             aioSkill.getScriptController().setTask("Transport");
             return;
         }
@@ -33,14 +36,19 @@ public class Woodcut extends Task {
         if (c.players.getLocal().isAnimating()) {
             return;
         }
+        if (aioSkill.secondOption.equalsIgnoreCase("Donator Zone")) {
+            tree = c.objects.populate().filter(LocationsData.WOODCUTTING.getWorldArea())
+                    .filter(aioSkill.woodcuttingData.getTaskName())
+                    .nextNearest();
+        } else {
+            tree = c.objects.populate().filter(LocationsData.WOODCUTTING_DONATOR_ZONE.getWorldArea())
+                    .filter(aioSkill.woodcuttingData.getTaskName())
+                    .nextNearest();
+        }
 
-        SimpleObject tree = c.objects.populate().filter(LocationsData.WOODCUTTING.getWorldArea())
-                .filter(aioSkill.woodcuttingData.getTaskName())
-                .nextNearest();
-
-        if (tree != null) {
+        if (tree != null && tree.validateInteractable()) {
             tree.menuAction("Chop down");
-            c.sleepCondition(c.players.getLocal()::isAnimating);
+            c.onCondition(() -> c.players.getLocal().isAnimating(), 600, 10);
             aioSkill.status = "Cutting down " + tree.getName();
             c.onCondition(() -> !c.players.getLocal().isAnimating(), 600, 10);
         } else {

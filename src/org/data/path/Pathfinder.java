@@ -12,20 +12,21 @@ import java.util.List;
 public class Pathfinder {
     ClientContext c;
 
-    private static final int[][] DIRECTIONS = {{0,1}, {1,0}, {0,-1}, {-1,0}, {1,1}, {-1,1}, {-1,-1}, {1,-1}};
+    private static final int[][] DIRECTIONS = { { 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 }, { 1, 1 }, { -1, 1 },
+            { -1, -1 }, { 1, -1 } };
     List<SimpleLocatable> obstacles;
-    WorldPoint target;
+    WorldPoint firstOption;
     WorldPoint start;
     boolean endReached;
     WorldPoint currentSearchTile;
     WorldPoint currentNeighbourTile;
 
-    public List<WorldPoint> generate(List<SimpleLocatable> obstacles, WorldPoint target) {
+    public List<WorldPoint> generate(List<SimpleLocatable> obstacles, WorldPoint firstOption) {
         c = ClientContext.instance();
 
         // Get current player location from game API
         start = c.players.getLocal().getLocation();
-        this.target = target;
+        this.firstOption = firstOption;
         this.obstacles = obstacles;
         endReached = false;
 
@@ -37,7 +38,7 @@ public class Pathfinder {
 
         PriorityQueue<Node> openSet = new PriorityQueue<>();
         Map<WorldPoint, Double> costSoFar = new HashMap<>();
-        openSet.add(new Node(start, null, 0, c.pathing.collisionDistance(target)));
+        openSet.add(new Node(start, null, 0, c.pathing.collisionDistance(firstOption)));
         costSoFar.put(start, 0.0);
         long startTime = System.currentTimeMillis();
 
@@ -45,19 +46,21 @@ public class Pathfinder {
             Node current = openSet.poll();
             currentSearchTile = current.point;
 
-            if (current.point.equals(target)) {
+            if (current.point.equals(firstOption)) {
                 System.out.println("Path Complete!");
                 return reconstructPath(current);
             }
 
             for (int[] dir : DIRECTIONS) {
-                WorldPoint neighbour = new WorldPoint(current.point.getX() + dir[0], current.point.getY() + dir[1], current.point.getPlane());
+                WorldPoint neighbour = new WorldPoint(current.point.getX() + dir[0], current.point.getY() + dir[1],
+                        current.point.getPlane());
                 currentNeighbourTile = neighbour;
-                if (blocked.contains(neighbour)) continue;
+                if (blocked.contains(neighbour))
+                    continue;
                 double newCost = current.g + 1; // Assuming uniform cost for simplicity
                 if (!costSoFar.containsKey(neighbour) || newCost < costSoFar.get(neighbour)) {
                     costSoFar.put(neighbour, newCost);
-                    double priority = newCost + neighbour.distanceTo(target);
+                    double priority = newCost + neighbour.distanceTo(firstOption);
                     openSet.add(new Node(neighbour, current, newCost, priority));
                 }
             }
@@ -85,8 +88,8 @@ public class Pathfinder {
             c.paint.drawTileMatrix(g2d, start, Color.CYAN);
         }
 
-        if (target != null) {
-            c.paint.drawTileMatrix(g2d, target, Color.GREEN);
+        if (firstOption != null) {
+            c.paint.drawTileMatrix(g2d, firstOption, Color.GREEN);
         }
 
         if (obstacles != null && !obstacles.isEmpty()) {

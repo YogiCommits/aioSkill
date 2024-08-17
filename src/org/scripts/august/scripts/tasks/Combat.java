@@ -15,7 +15,6 @@ import simple.hooks.wrappers.SimpleNpc;
 public class Combat extends Task {
 
     private SimpleItem prayerPotion;
-    private SimpleNpc superiorTaskNpc;
     private SimpleNpc taskNpc;
     private SimpleGroundItem loot;
     private SimpleItem boost;
@@ -87,8 +86,8 @@ public class Combat extends Task {
     private void handleLooting() {
         if (!c.groundItems.populate().filterContains(SlayerData.LOOT).isEmpty() && !c.inventory.inventoryFull()) {
             for (String item : SlayerData.LOOT) {
-                loot = c.groundItems.populate().filterContains(item).filterWithin(5).next();
-                if (loot != null && !loot.getName().contains("bolt tips") && !loot.getName().contains("Uncut")) {
+                loot = c.groundItems.populate().filterContains(item).filterWithin(7).next();
+                if (loot != null) {
                     loot.menuAction("Take");
                     c.onCondition(() -> c.groundItems.populate().filterContains(item).nextNearest() == null, 1000, 5);
                 }
@@ -97,9 +96,11 @@ public class Combat extends Task {
     }
 
     private void handleCombat() {
-        if (c.combat.inCombat() && "Prayer".equals(aioSkill.health)
+        if (c.combat.inCombat() && "Prayer".equals(aioSkill.secondOption)
                 && !aioSkill.slayerTask.getTaskName().equals("Cave Kraken")
-                && (!p.within(LocationsData.SLAYER_BLACK_DRAGON.getWorldArea()))) {
+                && (!p.within(LocationsData.SLAYER_BLACK_DRAGON.getWorldArea()))
+                && !aioSkill.slayerTask.getTaskName().equals("Cave Kraken")
+                && aioSkill.slayerTask.getPrayer().isEmpty()) {
             if (!c.prayers.quickPrayers()) {
                 c.prayers.quickPrayers(true);
             }
@@ -110,10 +111,10 @@ public class Combat extends Task {
                 drinkPrayer();
             }
         }
-        if (c.combat.inCombat() && "Food".equals(aioSkill.health)) {
+        if (c.combat.inCombat() && "Food".equals(aioSkill.firstOption)) {
             if (c.inventory.populate().filterContains(aioSkill.foodString).isEmpty()) {
                 aioSkill.getScriptController().setTask("Bank");
-            } else if (c.combat.health() <= 20 && haveFood()) {
+            } else if (c.combat.healthPercent() <= 20 && haveFood()) {
                 eatFood();
             }
         }
@@ -130,7 +131,6 @@ public class Combat extends Task {
     private void attackNpc(SimpleNpc npc, String taskName) {
         if (taskNpc != null) {
             aioSkill.status = "Attacking " + taskName;
-            taskNpc.click("Attack");
             taskNpc.menuAction("Attack");
             c.onCondition(() -> p.getInteracting().equals(taskNpc.getActor()), 600, 10);
             return;
@@ -171,9 +171,13 @@ public class Combat extends Task {
         String superiorNpcName = aioSkill.slayerTask.getSuperiorTaskNpcName();
         SimpleNpc treasureGoblin = c.npcs.hintArrowNpc();
         if (treasureGoblin != null) {
+            c.sleep(1200, 1600);
+            aioSkill.tGobblinCount += 1;
             return treasureGoblin;
+
         }
         if (aioSkill.superiorUp && superiorNpcName != null) {
+            c.sleep(1200, 1600);
             SimpleNpc superiorTaskNpc = c.npcs.populate()
                     .filterContains(superiorNpcName)
                     .nextNearest();
@@ -189,12 +193,13 @@ public class Combat extends Task {
                 .filter(npc -> npc != null && npc.getInteracting() != null
                         && npc.getInteracting().equals(c.players.getLocal().getActor()))
                 .nextNearest();
+
         if (taskNpc == null) {
             taskNpc = c.npcs.populate()
                     .filterContains(aioSkill.slayerTask.getTaskName())
                     .filterHasAction("Attack")
                     .filter(npc -> npc != null && !npc.isDead()
-                            && !npc.inCombat() && npc.getInteracting() == null)
+                            && !npc.inCombat() && npc.getInteracting() == null && npc.getAnimation() == -1)
                     .nextNearest();
         }
         return taskNpc;

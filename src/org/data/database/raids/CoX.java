@@ -17,7 +17,8 @@ public class CoX {
         public WorldArea SPAWN_ROOM() {
             try {
                 WorldPoint base = Objects.LOBBY_BANK_CHEST.getQuery().next().getLocation();
-                return new WorldArea(new WorldPoint(base.getX()-5, base.getY()-11, base.getPlane()), new WorldPoint(base.getX()+22, base.getY()+11, base.getPlane()));
+                return new WorldArea(new WorldPoint(base.getX() - 5, base.getY() - 11, base.getPlane()),
+                        new WorldPoint(base.getX() + 22, base.getY() + 11, base.getPlane()));
             } catch (NullPointerException e) {
                 return null;
             }
@@ -30,11 +31,14 @@ public class CoX {
         LIZARDMAN_SHAMAN(7745);
 
         int[] id;
+
         Npcs(int... id) {
             this.id = id;
         }
 
-        public int[] getIDs() {return id;}
+        public int[] getIDs() {
+            return id;
+        }
 
         public SimpleNpc get() {
             return getQuery().nextNearest();
@@ -50,13 +54,17 @@ public class CoX {
         CLICK_START_MESSAGE(229, 0);
 
         int x, y;
-        Widgets(int X, int Y) {x = X; y = Y;}
+
+        Widgets(int X, int Y) {
+            x = X;
+            y = Y;
+        }
 
         public SimpleWidget get() {
             try {
                 return ClientContext.instance().widgets.getWidget(x, y);
             } catch (NullPointerException e) {
-                System.out.println("Failed to get widget {"+x+","+y+"}");
+                System.out.println("Failed to get widget {" + x + "," + y + "}");
             }
             return null;
         }
@@ -83,16 +91,16 @@ public class CoX {
     public enum Animations {
         SHAMAN_JUMP(Npcs.LIZARDMAN_SHAMAN, 7152);
 
-        Npcs target;
+        Npcs firstOption;
         int anim;
 
-        Animations(Npcs target, int anim) {
-            this.target = target;
+        Animations(Npcs firstOption, int anim) {
+            this.firstOption = firstOption;
             this.anim = anim;
         }
 
         public boolean isAnimating() {
-            for (SimpleNpc snpc : target.getQuery()) {
+            for (SimpleNpc snpc : firstOption.getQuery()) {
                 if (snpc.getAnimation() == anim) {
                     return true;
                 }
@@ -121,13 +129,16 @@ public class CoX {
         public static WorldPoint getPassageLoc() {
             switch (workoutLayout()) {
                 case ROTATION_1:
-                    return new WorldPoint(Anchors.LOBBY.get().getX()-10, Anchors.LOBBY.get().getY()+14, Anchors.LOBBY.get().getPlane());
+                    return new WorldPoint(Anchors.LOBBY.get().getX() - 10, Anchors.LOBBY.get().getY() + 14,
+                            Anchors.LOBBY.get().getPlane());
 
                 case ROTATION_2:
-                    return new WorldPoint(Anchors.LOBBY.get().getX()+9, Anchors.LOBBY.get().getY()+20, Anchors.LOBBY.get().getPlane());
+                    return new WorldPoint(Anchors.LOBBY.get().getX() + 9, Anchors.LOBBY.get().getY() + 20,
+                            Anchors.LOBBY.get().getPlane());
 
                 case ROTATION_4:
-                    return new WorldPoint(Anchors.LOBBY.get().getY()+23, Anchors.LOBBY.get().getY()+10, Anchors.LOBBY.get().getPlane());
+                    return new WorldPoint(Anchors.LOBBY.get().getY() + 23, Anchors.LOBBY.get().getY() + 10,
+                            Anchors.LOBBY.get().getPlane());
             }
             return null;
         }
@@ -150,13 +161,16 @@ public class CoX {
 
             if (loc.equals(new WorldPoint(base.getX() + 1, base.getY() + 16, base.getPlane()))) {
                 return Layout.ROTATION_1;
-            } else if ((loc.equals(new WorldPoint(base.getX() + 5, base.getY() + 13, base.getPlane()))) && (!pas.equals(new WorldPoint(base.getX()+9, base.getY()+20, base.getPlane())))) {
+            } else if ((loc.equals(new WorldPoint(base.getX() + 5, base.getY() + 13, base.getPlane())))
+                    && (!pas.equals(new WorldPoint(base.getX() + 9, base.getY() + 20, base.getPlane())))) {
                 return Layout.ROTATION_2;
             } else if (loc.equals(new WorldPoint(base.getX() + 5, base.getY() + 9, base.getPlane()))) {
                 return Layout.ROTATION_3;
-            } else if (loc.equals(new WorldPoint(base.getX() + 3, base.getY() + 9, base.getPlane())) && pas.equals(new WorldPoint(base.getX() + 23, base.getY() + 10, base.getPlane()))) {
+            } else if (loc.equals(new WorldPoint(base.getX() + 3, base.getY() + 9, base.getPlane()))
+                    && pas.equals(new WorldPoint(base.getX() + 23, base.getY() + 10, base.getPlane()))) {
                 return Layout.ROTATION_4;
-            } else if (loc.equals(new WorldPoint(base.getX() + 5, base.getY() + 13, base.getPlane())) && pas.equals(new WorldPoint(base.getX()+9, base.getY()+20, base.getPlane()))) {
+            } else if (loc.equals(new WorldPoint(base.getX() + 5, base.getY() + 13, base.getPlane()))
+                    && pas.equals(new WorldPoint(base.getX() + 9, base.getY() + 20, base.getPlane()))) {
                 return Layout.ROTATION_5;
             }
         } catch (NullPointerException e) {

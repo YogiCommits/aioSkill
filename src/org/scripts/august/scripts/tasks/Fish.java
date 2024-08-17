@@ -24,7 +24,9 @@ public class Fish extends Task {
             return;
         }
         RandomEventsHandler.needsAction();
-        if (c.inventory.inventoryFull()) {
+
+        if (c.inventory.inventoryFull()
+                || c.inventory.populate().filterContains(aioSkill.fishingData.getRequiredTool()).isEmpty()) {
             aioSkill.getScriptController().setTask("Bank");
             return;
         }
@@ -33,7 +35,8 @@ public class Fish extends Task {
             return;
         }
 
-        if (aioSkill.fishingData.getTaskName().equalsIgnoreCase("Olympian fishing spot")) {
+        if (aioSkill.fishingData.getNpcName().equalsIgnoreCase("Olympian fishing spot")
+                && p.getLocation().distanceTo(FishingData.walkFishingSpot) > 2) {
             c.menuActions.step(FishingData.walkFishingSpot);
             c.onCondition(() -> !p.getLocation().equals(FishingData.walkFishingSpot), 600, 20);
             return;
@@ -42,14 +45,16 @@ public class Fish extends Task {
         SimpleNpc fishingSpot = c.npcs.populate().filter(LocationsData.WOODCUTTING.getWorldArea())
                 .filter(npc -> npc.getLocation() != FishingData.ignoreFishingSpot
                         && npc.getLocation() != FishingData.ignoreFishingSpot2)
-                .filterHasAction(aioSkill.fishingData.getNpcName())
-                .filterContains(aioSkill.fishingData.getTaskName())
+                .filterHasAction(aioSkill.fishingData.getAction())
                 .nextNearest();
-        aioSkill.status = "Locating " + fishingSpot.getName();
-        fishingSpot.menuAction(aioSkill.fishingData.getNpcName());
-        c.sleepCondition(c.players.getLocal()::isAnimating);
-        aioSkill.status = "Fishing from " + fishingSpot.getName();
-        c.onCondition(() -> !c.players.getLocal().isAnimating(), 600, 10);
+
+        if (fishingSpot != null) {
+            aioSkill.status = "Locating " + fishingSpot.getName();
+            fishingSpot.menuAction(aioSkill.fishingData.getAction());
+            c.onCondition(() -> c.players.getLocal().isAnimating(), 300, 10);
+            aioSkill.status = "Fishing from " + fishingSpot.getName();
+            c.onCondition(() -> !c.players.getLocal().isAnimating(), 300, 10);
+        }
     }
 
     @Override

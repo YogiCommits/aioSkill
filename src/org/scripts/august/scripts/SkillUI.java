@@ -53,6 +53,11 @@ public class SkillUI {
     private String secondaryOption;
     private String boost;
 
+    // Checkboxes
+    private JCheckBox slayWorldBossCheckBox;
+    private JCheckBox randomizeSkillCheckBox;
+    private JCheckBox prestigeCheckBox;
+
     public SkillUI(aioSkill sAIO) {
         this.sAIO = sAIO;
         SwingUtilities.invokeLater(new Runnable() {
@@ -60,7 +65,7 @@ public class SkillUI {
                 frame = new JFrame();
                 frame.setResizable(false);
                 frame.setTitle("autoAIO");
-                frame.setBounds(100, 100, 300, 275);
+                frame.setBounds(100, 100, 300, 325);
                 contentPane = new JPanel();
                 contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
                 frame.setContentPane(contentPane);
@@ -96,6 +101,7 @@ public class SkillUI {
 
         JLabel skillLabel = new JLabel("Skill");
         String[] skills = { "Thieving", "Woodcutting", "Mining", "Slayer", "Fishing", "Runecrafting", "Crafting",
+                "Smithing",
                 "Magic", };
         skillCB = new JComboBox<>(skills);
         skillCB.setSelectedIndex(0);
@@ -105,10 +111,14 @@ public class SkillUI {
         updateOptions(skillCB.getSelectedItem().toString(), optionCB);
 
         secondaryOptionLabel = new JLabel("Secondary Option");
-        secondaryOptionLabel.setVisible(false);
+        secondaryOptionLabel.setVisible(true);
 
         secondaryOptionCB = new JComboBox<>();
-        secondaryOptionCB.setVisible(false);
+        secondaryOptionCB.setVisible(true);
+        secondaryOptionCB.addItem("None");
+        secondaryOptionCB.addItem("Donator Zone");
+        secondaryOptionCB.addItem("Corrupt Zone");
+        secondaryOptionCB.addItem("Regular Zone");
 
         primaryWeaponLabel = new JLabel("Primary Weapon");
         primaryWeaponField = new JTextField(10);
@@ -135,11 +145,23 @@ public class SkillUI {
         alchLabel.setVisible(false);
         alchField.setVisible(false);
 
+        slayWorldBossCheckBox = new JCheckBox("Slay World Boss");
+        randomizeSkillCheckBox = new JCheckBox("Randomize Skill");
+        prestigeCheckBox = new JCheckBox("Prestige");
+
         skillCB.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String selectedSkill = skillCB.getSelectedItem().toString();
                 updateOptions(selectedSkill, optionCB);
                 toggleSecondaryOptions(selectedSkill);
+            }
+        });
+
+        optionCB.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (skillCB.getSelectedItem().toString().equals("Smithing")) {
+                    toggleSecondaryOptions("Smithing");
+                }
             }
         });
 
@@ -153,7 +175,10 @@ public class SkillUI {
                                 .addComponent(secondaryWeaponLabel)
                                 .addComponent(foodLabel)
                                 .addComponent(boostLabel)
-                                .addComponent(alchLabel))
+                                .addComponent(alchLabel)
+                                .addComponent(slayWorldBossCheckBox)
+                                .addComponent(randomizeSkillCheckBox)
+                                .addComponent(prestigeCheckBox)) // Add this line
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                 .addComponent(skillCB)
                                 .addComponent(optionCB)
@@ -163,6 +188,7 @@ public class SkillUI {
                                 .addComponent(foodField)
                                 .addComponent(boostField)
                                 .addComponent(alchField)));
+
         layout.setVerticalGroup(
                 layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
@@ -188,9 +214,11 @@ public class SkillUI {
                                 .addComponent(boostField))
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(alchLabel)
-                                .addComponent(alchField)));
+                                .addComponent(alchField))
+                        .addComponent(slayWorldBossCheckBox)
+                        .addComponent(randomizeSkillCheckBox)
+                        .addComponent(prestigeCheckBox));
 
-        // Button panel components
         btnStartStop = new JButton("Start");
         btnSave = new JButton("Save");
         btnLoad = new JButton("Load");
@@ -239,16 +267,14 @@ public class SkillUI {
             case "Thieving":
                 options = new String[] { "Silk stall", "Spice stall", "Baker's stall", "Coin stall",
                         "Silver Stall", "Upgrade gem stall", "Fur stall", "Sapphire stall", "Emerald stall",
-                        "Ruby Stall",
-                        "Best" };
+                        "Ruby Stall" };
                 break;
             case "Woodcutting":
                 options = new String[] { "Tree", "Oak", "Willow", "Maple", "Yew", "Best" };
                 break;
             case "Mining":
                 options = new String[] { "Copper Ore", "Iron Ore", "Coal", "Gold Ore", "Mithril Ore", "Runite Ore",
-                        "Dragon Ore", "Oxi Ore", "Luminite Ore", "Rune Essence",
-                        "Best" };
+                        "Dragon Ore", "Oxi Ore", "Luminite Ore", "Rune Essence" };
                 break;
             case "Slayer":
                 options = new String[] { "Turael", "Vannaka", "Nieve", "Nixite", "Best" };
@@ -261,11 +287,14 @@ public class SkillUI {
                 break;
             case "Crafting":
                 options = new String[] { "Uncut Sapphire", "Uncut Ruby", "Uncut Emerald", "Uncut Diamond",
-                        "Uncut Dragonstone", "Uncut Onyx",
+                        "Uncut Dragonstone", "Uncut Onyx", "Coal", "Luminite Ore",
                         "Uncut Zenyte", "Best" };
                 break;
             case "Magic":
                 options = new String[] { "High Alchemy" };
+                break;
+            case "Smithing":
+                options = new String[] { "Smith", "Smelt" };
                 break;
             default:
                 options = new String[] {};
@@ -305,13 +334,17 @@ public class SkillUI {
         boost = (String) boostField.getText();
         sAIO.skill = skill;
         sAIO.boost = boost;
-        sAIO.target = option;
-        sAIO.health = secondaryOption;
+        sAIO.firstOption = option;
+        sAIO.secondOption = secondaryOption;
+        sAIO.slayWorldBoss = slayWorldBossCheckBox.isSelected();
+        sAIO.randomizeSkill = randomizeSkillCheckBox.isSelected();
+        sAIO.prestige = prestigeCheckBox.isSelected();
 
         if (skill.equals("Magic")) {
             String alchItem = alchField.getText();
             sAIO.alchItem = alchItem;
         }
+
         if (skill.equals("Slayer")) {
             String primaryWeapon = primaryWeaponField.getText();
             String secondaryWeapon = secondaryWeaponField.getText();
@@ -347,6 +380,9 @@ public class SkillUI {
         jsonObject.put("option", (String) optionCB.getSelectedItem());
         jsonObject.put("secondaryOption", (String) secondaryOptionCB.getSelectedItem());
         jsonObject.put("boost", (String) boostField.getText());
+        jsonObject.put("slayWorldBoss", slayWorldBossCheckBox.isSelected());
+        jsonObject.put("randomizeSkill", randomizeSkillCheckBox.isSelected());
+        jsonObject.put("prestige", prestigeCheckBox.isSelected());
 
         if (skillCB.getSelectedItem().equals("Slayer")) {
             jsonObject.put("primaryWeapon", primaryWeaponField.getText());
@@ -366,11 +402,16 @@ public class SkillUI {
     }
 
     private void toggleSecondaryOptions(String skill) {
+        secondaryOptionCB.removeAllItems();
+
+        boolean isSmithing = skill.equals("Smithing");
         boolean isSlayer = skill.equals("Slayer");
         boolean isMagic = skill.equals("Magic");
+        // boolean isWoodcutting = skill.equals("Woodcutting");
+        // boolean isFishing = skill.equals("Fishing");
+        // boolean isThieving = skill.equals("Thieving");
+        // boolean isMining = skill.equals("Mining");
 
-        secondaryOptionLabel.setVisible(isSlayer);
-        secondaryOptionCB.setVisible(isSlayer);
         primaryWeaponLabel.setVisible(isSlayer);
         primaryWeaponField.setVisible(isSlayer);
         secondaryWeaponLabel.setVisible(isSlayer);
@@ -382,15 +423,27 @@ public class SkillUI {
         alchLabel.setVisible(isMagic);
         alchField.setVisible(isMagic);
 
+        if (isSmithing) {
+            if (optionCB.getSelectedItem() != null && optionCB.getSelectedItem().toString().equals("Smelt")) {
+                secondaryOptionCB.addItem("Runite Ore");
+                secondaryOptionCB.addItem("Dragon Ore");
+            } else if (optionCB.getSelectedItem() != null && optionCB.getSelectedItem().toString().equals("Smith")) {
+                secondaryOptionCB.addItem("Rune Platelegs");
+                secondaryOptionCB.addItem("Dragon Platelegs");
+            }
+        }
         if (isSlayer) {
-            secondaryOptionCB.removeAllItems();
             String[] secondaryOptions = { "Food", "Prayer", "None" };
             for (String option : secondaryOptions) {
                 secondaryOptionCB.addItem(option);
             }
-            ;
-        }
+        } else {
+            secondaryOptionCB.addItem("None");
+            secondaryOptionCB.addItem("Donator Zone");
+            secondaryOptionCB.addItem("Corrupt Zone");
+            secondaryOptionCB.addItem("Regular Zone");
 
+        }
     }
 
     private void onLoadSettings() throws JSONException {
@@ -417,6 +470,9 @@ public class SkillUI {
                     boostField.setText(jsonObject.getString("boost"));
                 }
             }
+            slayWorldBossCheckBox.setSelected(jsonObject.optBoolean("slayWorldBoss", false));
+            randomizeSkillCheckBox.setSelected(jsonObject.optBoolean("randomizeSkill", false));
+            prestigeCheckBox.setSelected(jsonObject.optBoolean("prestige", false));
         } catch (IOException e) {
             e.printStackTrace();
         }

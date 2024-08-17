@@ -59,9 +59,17 @@ public class aioSkillPaint {
         }
 
         addLine(() -> "Runtime: " + ctx.paint.formatTime(System.currentTimeMillis() - script.getStartTime()));
-        addLine(() -> "Status: " + (script.status != null ? script.status : "Select Settings in the GUI"));
-        addLine(() -> "Skill: " + (script.skill != null ? script.skill : ""));
-        addLine(() -> "Option: " + (script.target != null ? script.target : ""));
+        addLine(() -> "Status: " + script.getStatus());
+        addLine(() -> "Skill: " + script.getSkill());
+        addLine(() -> "Option: " + script.getfirstOption());
+        if (script.getSecondOption() != null && !aioSkill.getSecondOption().isEmpty()) {
+            addLine(() -> "2nd Option: " + aioSkill.getSecondOption());
+        }
+        if (script.getSkill().equals("Slayer")) {
+            addLine(() -> "Task Complete: " + script.getSlayerTasksCompleted());
+            addLine(() -> "Superiors Spawned: " + script.getSuperiorSpawned());
+            addLine(() -> "Treasure Goblins Spawned: " + script.getTGobblinCount());
+        }
     }
 
     public void drawPaint(Graphics2D g) {

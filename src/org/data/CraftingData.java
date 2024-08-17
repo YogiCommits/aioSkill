@@ -2,8 +2,6 @@ package org.data;
 
 import java.util.List;
 
-import org.data.handler.TeleporterHandler;
-
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.wrappers.SimpleNpc;
 import simple.robot.api.ClientContext;
@@ -52,7 +50,7 @@ public class CraftingData {
             return requiredLevel;
         }
 
-        public boolean isTaskTargetPresent() {
+        public boolean isTaskfirstOptionPresent() {
             return ctx.objects.populate().filter(taskName).isEmpty();
         }
 
@@ -60,13 +58,14 @@ public class CraftingData {
             return ctx.npcs.populate().filter(npcName).nextNearest();
         }
 
-        public void teleportTarget() {
+        public void teleportfirstOption() {
             if (taskName == null || "".equals(getTeleportSection())) {
                 System.out.println("Unknown task. Cannot teleport.");
             } else {
-                TeleporterHandler.teleport("Modern", "Lumbridge Home Teleport");
+                ctx.magic.castHomeTeleport();
                 ctx.sleep(1000, 3000);
-                TeleporterHandler.teleport(getTeleportSection(), getTeleportLocation());
+                ctx.teleporter.open();
+                ctx.teleporter.teleportStringPath(getTeleportSection(), getTeleportLocation());
             }
         }
     }
@@ -77,7 +76,8 @@ public class CraftingData {
             new Task("", "", "", "Uncut Ruby", 34),
             new Task("", "", "", "Uncut Diamond", 43),
             new Task("", "", "", "Uncut Dragonstone", 55),
-            new Task("", "", "", "Uncut Zenyte", 70));
+            new Task("", "", "", "Uncut Zenyte", 70),
+            new Task("", "", "", "Coal", 200), new Task("", "", "", "Luminite Ore", 200));
 
     public String getTaskName() {
         return currentTask != null ? currentTask.getTaskName() : "No task set";

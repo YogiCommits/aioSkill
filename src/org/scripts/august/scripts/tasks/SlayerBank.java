@@ -7,7 +7,6 @@ import org.scripts.august.scripts.aioSkill;
 
 import simple.hooks.wrappers.SimpleObject;
 import simple.hooks.wrappers.SimpleItem;
-import simple.hooks.wrappers.SimpleNpc;
 import simple.robot.utils.WorldArea;
 
 public class SlayerBank extends Task {
@@ -15,9 +14,15 @@ public class SlayerBank extends Task {
     private SimpleObject bank;
     private SimpleItem item;
     WorldArea reachableBankArea = LocationsData.HOME.getWorldArea();
+    private String itemToWithdraw;
 
     @Override
     public void run() {
+        itemToWithdraw = aioSkill.firstOption.equals("Prayer") ? "Prayer potion(4)" : aioSkill.foodString;
+
+        if (c.prayers.quickPrayers()) {
+            c.prayers.quickPrayers(false);
+        }
         if (RandomEventsHandler.needsAction()) {
             return;
         }
@@ -38,6 +43,12 @@ public class SlayerBank extends Task {
 
         if (!c.bank.bankOpen()) {
             locateAndOpenBank();
+            c.sleep(1200, 1800);
+            if (c.bank.bankOpen()) {
+                handleBankOperations();
+                return;
+            }
+            return;
         }
 
         if (shouldTransportAfterBank()) {
@@ -59,15 +70,16 @@ public class SlayerBank extends Task {
         SimpleObject pool = c.objects.populate().filterContains("pool").next();
         if (pool != null) {
             pool.menuAction("Drink");
-            pool.click("Drink");
-            c.sleep(3000, 4000);
-            c.keyboard.clickKey(49);
+            c.onCondition(() -> c.dialogue.dialogueOpen(), 500, 10);
+        }
+        if (c.dialogue.dialogueOpen()) {
+            c.dialogue.clickDialogueOption(1);
         }
     }
 
     private boolean shouldSetSlayerTreeTask() {
         return p.within(LocationsData.HOME.getWorldArea()) &&
-                (aioSkill.health.contains("None") || (aioSkill.health.contains("Pray")
+                (aioSkill.firstOption.contains("None") || (aioSkill.firstOption.contains("Pray")
                         && !c.inventory.populate().filterContains("prayer").isEmpty()));
     }
 
@@ -78,56 +90,36 @@ public class SlayerBank extends Task {
         }
 
         if (bank != null && tryOpenBank(bank)) {
-            handleBankOperations();
+            aioSkill.status = "Bank Opened";
         }
     }
 
     private boolean tryOpenBank(SimpleObject bank2) {
         bank2.menuAction("Bank");
-        return c.onCondition(() -> c.bank.bankOpen(), 600, 10);
-    }
-
-    private void handleBankOperations() {
-        aioSkill.status = "Bank Opened";
-        handleSlayerBanking();
-        aioSkill.status = "Closing the Bank";
-        c.bank.closeBank();
+        return c.onCondition(() -> c.bank.bankOpen(), 500, 10);
     }
 
     private void depositInventory() {
-        c.bank.depositInventory();
-        c.menuActions.sendAction(57, -1, 786474, 1, "Deposit Inventory", "");
-        c.sleepCondition(() -> !c.inventory.inventoryFull());
+        if (!c.inventory.populate().isEmpty()) {
+            c.menuActions.sendAction(57, -1, 786474, 1, "Deposit Inventory", "");
+            c.sleepCondition(() -> !c.inventory.inventoryFull());
+        }
     }
 
-    private void handleSlayerBanking() {
+    private void handleBankOperations() {
         aioSkill.status = "Banking for Supplies";
-        String itemToWithdraw = aioSkill.health.equals("Prayer") ? "Prayer Potion(4)" : aioSkill.foodString;
-        int quantityToWithdraw = 10;
+
+        if (c.inventory.getFreeSlots() != 28) {
+            depositInventory();
+        }
 
         if (!isItemAvailableInBank(itemToWithdraw)) {
             c.stopScript();
             return;
         }
 
-        depositInventory();
-
         withdrawEssentialItems();
-        c.bank.withdraw("Wealth collector", 1);
-        c.bank.withdraw("Bonecrusher", 1);
-        withdrawItem(itemToWithdraw, quantityToWithdraw);
-        waitForItemInInventory(itemToWithdraw);
 
-        if (needsPrimaryWeapon()) {
-            withdrawItem(aioSkill.primaryWeaponString, 1);
-        }
-
-        if (needsSecondaryWeapon()) {
-            withdrawItem(aioSkill.secondaryWeaponString, 1);
-        }
-        if (!aioSkill.boost.isEmpty()) {
-            withdrawItem(aioSkill.boost, 1);
-        }
     }
 
     private boolean isItemAvailableInBank(String itemName) {
@@ -135,20 +127,44 @@ public class SlayerBank extends Task {
     }
 
     private void withdrawEssentialItems() {
+        withdrawItem(itemToWithdraw, 10);
         withdrawItem("Wealth collector", 1);
         withdrawItem("Bonecrusher", 1);
-        withdrawItem(aioSkill.secondaryWeaponString, 1);
+        if (needsPrimaryWeapon()) {
+            withdrawItem(aioSkill.primaryWeaponString, 1);
+        }
+
+        if (needsSecondaryWeapon()) {
+            withdrawItem(aioSkill.secondaryWeaponString, 1);
+        }
+
+        if (!aioSkill.boost.isEmpty()) {
+            withdrawItem(aioSkill.boost, 1);
+        }
     }
 
     private void withdrawItem(String itemName, int quantity) {
         if (isItemAvailableInBank(itemName)) {
-            c.bank.withdraw(c.bank.populate().filterContains(itemName).next().getId(), quantity);
-            c.sleep(600, 1000);
+            SimpleItem item = c.bank.populate().filterContains(itemName).next();
+            if (item != null) {
+                if (quantity == 1) {
+                    item.menuAction("Withdraw-1");
+                } else if (quantity == 10) {
+                    item.menuAction("Withdraw-10");
+                }
+                waitForItemInInventory(item.getName());
+                if (!c.inventory.populate().filterContains(itemName).isEmpty()) {
+                    return;
+                }
+            }
         }
+
+        c.sleep(200);
+        withdrawItem(itemName, quantity);
     }
 
     private void waitForItemInInventory(String itemName) {
-        c.onCondition(() -> !c.inventory.populate().filterContains(itemName).isEmpty(), 300, 10);
+        c.onCondition(() -> !c.inventory.populate().filterContains(itemName).isEmpty(), 300, 5);
     }
 
     private boolean needsPrimaryWeapon() {

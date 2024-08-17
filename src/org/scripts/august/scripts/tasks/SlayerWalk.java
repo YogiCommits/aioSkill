@@ -14,6 +14,9 @@ public class SlayerWalk extends Task {
 
     @Override
     public void run() {
+        if (c.prayers.quickPrayers()) {
+            c.prayers.quickPrayers(false);
+        }
         String taskName = aioSkill.slayerTask.getTaskName().toLowerCase();
 
         if (!p.within(LocationsData.SLAYER_BARROWS.getWorldArea()) && taskName.contains("dharok the wretched")) {

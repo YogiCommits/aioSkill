@@ -9,6 +9,8 @@ import simple.hooks.wrappers.SimpleItem;
 
 public class Craft extends Task {
     SimpleItem gem;
+    private SimpleItem chisel;
+    private SimpleItem hammer;
 
     @Override
     public void run() {
@@ -27,6 +29,8 @@ public class Craft extends Task {
         }
 
         if (gem != null) {
+            chisel = c.inventory.populate().filterContains("Chisel").next();
+            hammer = c.inventory.populate().filterContains("Hammer").next();
             craft();
         } else {
             aioSkill.getScriptController().setTask("Bank");
@@ -35,8 +39,12 @@ public class Craft extends Task {
 
     public void craft() {
         gem.menuAction("use");
-        SimpleItem chisel = c.inventory.populate().filterContains("Chisel").next();
-        chisel.getClickBounds();
+        if (chisel != null) {
+            chisel.getClickBounds();
+        }
+        if (hammer != null) {
+            hammer.getClickBounds();
+        }
         double x = chisel.getClickBounds().getCenterX();
         double y = chisel.getClickBounds().getCenterY();
         int intX = (int) x;

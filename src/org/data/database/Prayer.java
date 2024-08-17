@@ -37,21 +37,21 @@ public enum Prayer {
     PROTECT_FROM_MAGIC(35454997, "Protect from Magic");
 
     int param1;
-    String target;
+    String firstOption;
 
-    Prayer(int PARAM1, String TARGET) {
+    Prayer(int PARAM1, String firstOption) {
         param1 = PARAM1;
-        target = TARGET;
+        firstOption = firstOption;
     }
 
     public void enableP() {
         ClientContext c = ClientContext.instance();
-        c.menuActions.sendAction(57, -1, param1, 1, "Activate", "<col=ff9040>" + target + "</col>");
+        c.menuActions.sendAction(57, -1, param1, 1, "Activate", "<col=ff9040>" + firstOption + "</col>");
     }
 
     public void disableP() {
         ClientContext c = ClientContext.instance();
-        c.menuActions.sendAction(57, -1, param1, 1, "Deactivate", "<col=ff9040>" + target + "</col>");
+        c.menuActions.sendAction(57, -1, param1, 1, "Deactivate", "<col=ff9040>" + firstOption + "</col>");
     }
 
 }

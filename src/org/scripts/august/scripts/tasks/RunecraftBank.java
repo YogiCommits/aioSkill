@@ -5,7 +5,6 @@ import org.data.handler.RandomEventsHandler;
 import org.scripter.Task;
 import org.scripts.august.scripts.aioSkill;
 
-import net.runelite.api.Point;
 import simple.hooks.wrappers.SimpleObject;
 import simple.hooks.wrappers.SimpleItem;
 import simple.robot.utils.WorldArea;
@@ -25,20 +24,18 @@ public class RunecraftBank extends Task {
         boolean isAtHome = p.within(homeArea);
         boolean hasEssence = hasEssenceInInventory();
 
-        if ((!isAtHome && altar == null) || (isAtHome && hasEssence) || (!isAtHome && !hasEssence)) {
-            aioSkill.getScriptController().setTask("Transport");
+        if (isAtHome && !hasEssence) {
+            handleBankOperations();
             return;
         }
 
+        if ((!isAtHome && altar == null && !hasEssence) || (isAtHome && hasEssence)) {
+            aioSkill.getScriptController().setTask("RunecraftTransport");
+            return;
+        }
         if (!isAtHome && hasEssence && altar != null) {
             aioSkill.getScriptController().setTask("Runecraft");
             return;
-        }
-
-        if (!c.bank.bankOpen()) {
-            locateAndOpenBank();
-        } else {
-            handleBankOperations();
         }
     }
 
@@ -48,11 +45,7 @@ public class RunecraftBank extends Task {
 
     private void locateAndOpenBank() {
         aioSkill.status = "Locating Bank";
-        bank = p.within(homeArea) ? c.objects.populate().filterHasAction("Bank").nextNearest() : null;
-
-        if (bank == null) {
-            bank = c.objects.populate().filter(homeArea).filterHasAction("Bank").nextNearest();
-        }
+        bank = c.objects.populate().filterHasAction("Bank").nextNearest();
 
         if (bank != null) {
             bank.menuAction("Bank");
@@ -61,53 +54,50 @@ public class RunecraftBank extends Task {
     }
 
     private void handleBankOperations() {
-        aioSkill.status = "Bank Opened";
+        locateAndOpenBank();
         if (c.bank.bankOpen()) {
             runecraftBanking();
+        }
+        if (hasEssenceInInventory()) {
             aioSkill.status = "Closing the Bank";
-            if (hasEssenceInInventory()) {
-                c.bank.closeBank();
-            }
+            c.bank.closeBank();
+        }
+    }
+
+    private void depositInventory() {
+        if (!c.inventory.populate().isEmpty()) {
+            c.menuActions.sendAction(57, -1, 786474, 1, "Deposit Inventory", "");
+            c.sleepCondition(() -> c.inventory.getFreeSlots() == 28);
         }
     }
 
     private void runecraftBanking() {
-        if (c.bank.bankOpen()) {
-            if (c.bank.populate().filterContains("essence block").isEmpty()) {
-                c.stopScript();
-            }
-            c.bank.depositInventory();
-            c.onCondition(() -> c.inventory.populate().filterContains(runes).isEmpty(), 300, 10);
-            if (!c.inventory.populate().filterContains(runes).isEmpty()) {
-                depositRunesFromBank();
-            }
-            withdrawEssence();
+        if (c.bank.populate().filterContains("essence block").isEmpty()) {
+            c.stopScript();
+            return;
         }
-    }
-
-    private void depositRunesFromBank() {
-        for (String rune : runes) {
-            SimpleItem bankItem = c.inventory.populate().filterContains(rune).next();
-            if (bankItem != null) {
-                c.sleep(300, 600);
-                Point clickPosition = getClickPosition(bankItem);
-                c.mouse.moveMouse(clickPosition.getX(), clickPosition.getY());
-                c.mouse.clickPointWithOption(clickPosition, 6);
-                c.sleep(300, 600);
-            }
+        if (c.inventory.getFreeSlots() != 28) {
+            depositInventory();
         }
+        withdrawEssence();
     }
 
     private void withdrawEssence() {
-        c.bank.withdraw("Dense essence block", 28);
-        c.sleep(1200, 1800);
-        c.onCondition(() -> hasEssenceInInventory(), 300, 10);
+        withdrawItem("essence block", 28);
+        c.onCondition(this::hasEssenceInInventory, 300, 10);
     }
 
-    private Point getClickPosition(SimpleItem item) {
-        return new Point(
-                (int) item.getClickBounds().getCenterX(),
-                (int) item.getClickBounds().getCenterY());
+    private void withdrawItem(String itemName, int quantity) {
+        SimpleItem item = c.bank.populate().filterContains(itemName).next();
+        if (item != null) {
+            String action = quantity == 28 ? "Withdraw-All" : "Withdraw-10";
+            item.menuAction(action);
+            waitForItemInInventory(itemName);
+        }
+    }
+
+    private void waitForItemInInventory(String itemName) {
+        c.onCondition(() -> !c.inventory.populate().filterContains(itemName).isEmpty(), 300, 5);
     }
 
     @Override

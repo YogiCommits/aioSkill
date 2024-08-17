@@ -17,13 +17,13 @@ public class Runecraft extends Task {
         boolean hasEssence = !c.inventory.populate().filterContains("essence").isEmpty();
 
         if (!hasEssence && altar != null) {
-            aioSkill.getScriptController().setTask("Transport");
+            aioSkill.getScriptController().setTask("RunecraftTransport");
             return;
         }
 
         if (hasEssence) {
             if (altar == null && isAtHome) {
-                aioSkill.getScriptController().setTask("Transport");
+                aioSkill.getScriptController().setTask("RunecraftTransport");
             } else if (altar != null) {
                 altar.menuAction("Bind-random");
                 c.sleepCondition(() -> !c.inventory.inventoryFull());
@@ -33,7 +33,7 @@ public class Runecraft extends Task {
 
     @Override
     public String DebugTaskDescription() {
-        return "RunecraftBank";
+        return "Runecraft";
     }
 
 }

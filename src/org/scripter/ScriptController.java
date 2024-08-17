@@ -36,8 +36,12 @@ public class ScriptController implements Runnable {
             curr = "Null";
         }
         System.out.println("{ScriptController} - Setting Task  [" + curr + "] --> [" + name + "]");
-        currentTask = tasks.get(name.toLowerCase());
 
+        if (currentTask != null) {
+            currentTask.reset();
+        }
+
+        currentTask = tasks.get(name.toLowerCase());
     }
 
     public void runTask() {
@@ -90,6 +94,22 @@ public class ScriptController implements Runnable {
             tasks.remove(t);
         }
         tasks = null;
+    }
 
+    public String getTaskDebugString() {
+        StringBuilder debugString = new StringBuilder();
+        String currTaskDesc = (currentTask != null) ? currentTask.DebugTaskDescription() : "Null";
+        debugString.append("Current Task: ").append(currTaskDesc).append("\n");
+
+        if (!backgroundTasks.isEmpty()) {
+            debugString.append("Background Tasks:\n");
+            for (Task bgTask : backgroundTasks) {
+                debugString.append("  - ").append(bgTask.DebugTaskDescription()).append("\n");
+            }
+        } else {
+            debugString.append("No Background Tasks.\n");
+        }
+
+        return debugString.toString();
     }
 }
